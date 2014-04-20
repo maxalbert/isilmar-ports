@@ -1,0 +1,158 @@
+#!/usr/bin/perl -w
+
+# $Id: reinstallport,v 1.6 2011/11/08 06:03:42 aehlig Exp $
+
+use strict;
+use Cwd 'realpath';
+
+@ARGV == 1 or die "Usage $0 <portdir>\n";
+
+my ($port) = @ARGV;
+
+
+my $portsdir = get_portsdir();
+my $prefixbase = get_prefixbase();
+my $date = `date +%Y%m%d-%H%M%S`; chomp($date);
+my $installname = get_installname();
+
+print "===> reinstall of $port\n";
+print "Portsdirectory is  $portsdir\n";
+print "PREFIXBASE is      $prefixbase\n";
+print "Port to rebuild is $port\n";
+print "Will install       $installname\n";
+
+do_build();
+do_test();
+do_deinstall();
+do_install();
+print "===> finished $port\n";
+
+exit 0;
+
+##################### Subroutines to do the work
+
+sub do_build
+{
+	print "---> building...\n";
+	my $call = "cd \Q$portsdir/$port\E && make clean && PREFIXBASE=$prefixbase make build";
+
+	print $call . "\n";
+	system($call) and die "Call failed ($?)\n";
+
+}
+
+sub do_test
+{
+	print "---> running regression tests (if any)...\n";
+	my $call = "cd \Q$portsdir/$port\E && PREFIXBASE=$prefixbase make test";
+
+	print $call . "\n";
+	system($call) and die "Call failed ($?)\n";
+
+}
+
+sub do_deinstall
+{
+	print "---> deinstalling old versions (if any)...\n";
+	my $dh;
+	opendir($dh, $prefixbase . "/stow/")
+		or die "Failed to open $prefixbase/stow";
+	foreach(readdir($dh)) {
+		/^$installname-/ or next;
+		my $dir = $_;
+
+		my $call = "cd \Q$prefixbase/stow\E && stow -vD \Q$dir\E";
+		print $call . "\n";
+		system($call) and die "Call failed ($?)\n";
+
+		$call = "mv \Q$prefixbase/stow/$dir\E \Q$prefixbase/stow/OLD-$date.$dir\E";
+		print $call . "\n";
+		system($call) and die "Call failed ($?)\n";
+
+	};
+	closedir($dh);
+}
+
+sub do_install
+{
+	print "---> installing...\n";
+	my $call = "cd \Q$portsdir/$port\E && PREFIXBASE=$prefixbase make install clean";
+	print $call . "\n";
+	system($call) and die "Call failed ($?)\n";
+
+	my $dh;
+	opendir($dh, $prefixbase . "/stow/")
+		or die "Failed to open $prefixbase/stow";
+	foreach(readdir($dh)) {
+		/^$installname-/ or next;
+		my $dir = $_; 
+
+		my $call = "cd \Q$prefixbase/stow\E && stow -v \Q$dir\E";
+		print $call . "\n";
+		system($call) and die "Call failed ($?)\n";
+	};
+	closedir($dh);
+
+}
+
+
+##################### Subroutines to get environment variables or guesses for them
+
+sub get_portsdir
+{
+
+	# Try to find out, where the checkout of the isilmar ports resided
+
+	# First priority: environment variables
+
+	defined($ENV{'PORTS'}) and return $ENV{'PORTS'};
+	
+        # Second priority: the location of this binary
+
+	my $prgdir = realpath($0);
+	$prgdir =~ s/\/bin\/reinstallport$//;
+
+	# sanity check: there should be file ports.mk in $prgdir
+	-f "$prgdir/ports.mk" and return $prgdir;
+
+	# Third priority: /usr/local/ports
+
+	-f "/usr/local/ports/ports.mk" and -f "/usr/local/ports/bin/reinstallport" 
+	and return "/usr/local/ports";
+
+	## Fail
+
+	die "Failed to find the ports directory; please set PORTS correspondingly";
+}
+
+sub get_prefixbase
+{
+
+	# Try to find out the value of PREFIXBASE
+
+
+	# First priority: environment variables
+
+	defined($ENV{'PREFIXBASE'}) and return $ENV{'PREFIXBASE'};
+
+	# guess: /usr/local
+
+	-d "/usr/local/stow" and return "/usr/local";
+
+	# guess: $HOME
+
+	defined($ENV{'HOME'}) and -d "$ENV{'HOME'}/stow" and return $ENV{'HOME'};
+
+	## Fail
+
+	die "Failed to find out PREFIXBASE; please set environment variable";
+}
+
+sub get_installname
+{
+	-d "$portsdir/$port" or die "Unknown port $port\n";
+	my $call = "cd \Q$portsdir/$port\E && make print-PORTNAME";
+	my $portname = `$call`;
+	chomp($portname);
+	return $portname;
+}

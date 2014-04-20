@@ -1,0 +1,13 @@
+--- policy.h.orig	2010-05-29 09:17:25.468992699 +0200
++++ policy.h	2010-05-29 09:18:03.968995030 +0200
+@@ -240,8 +240,8 @@
+    the sendmail choice below.  Otherwise, select one of the other
+    choices as appropriate.  */
+ #if 1
+-#define MAIL_PROGRAM "/usr/lib/sendmail -t"
+-/* #define MAIL_PROGRAM "/usr/sbin/sendmail -t" */
++/* #define MAIL_PROGRAM "/usr/lib/sendmail -t" */
++#define MAIL_PROGRAM "/usr/sbin/sendmail -t"
+ #define MAIL_PROGRAM_TO_BODY 1
+ #define MAIL_PROGRAM_SUBJECT_BODY 1
+ #endif

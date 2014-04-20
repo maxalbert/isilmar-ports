@@ -1,0 +1,140 @@
+<html>
+<head>
+<title>Installing isilmar-ports in your home directory</title>
+</head>
+<body>
+<h1>Installing isilmar-ports in your home directory</h1>
+<p>
+The isilmar ports collection can also be used to install software
+completely in user land, without ever needing increased privileges.
+This page describes such a user-land installation.
+</p>
+
+<h2>Choosing your directory layout</h2>
+<p>
+Isilmar-ports take the directory layout they follow from environment
+variables, so you better set them once and for all. Also, to make your
+installation useful, you have to add the place you install to into
+your path.
+</p>
+<p>
+In the following copy-and-paste example we assume that your shell is
+the bash (the most popular one on GNU/Linux systems) and use the
+following layout. Everything we do (apart from setting these
+environment variables) happens in a directory <tt>software</tt> in
+your home directory. In that directory, we have a
+directory <tt>install</tt> where everything is installed into, a
+directory <tt>distfiles</tt> where upstream sources are collected and
+a directory <tt>ports</tt> for the ports tree. Hence you might add the
+following to your <tt>.bashrc</tt>.
+</p>
+<blockquote>
+<pre>
+export PORTSDIR=$HOME/software/ports
+export DISTDIR=$HOME/software/distfiles
+export PREFIXBASE=$HOME/software/install
+export PATH=$PREFIXBASE/bin:$PATH
+</pre>
+</blockquote>
+<p>
+Don't forget to source the configuration again, to have these
+variables set (for fresh shells this will happen automatically once
+you've changed your configuration file).
+</p>
+<blockquote>
+$ . ~/.bashrc
+</blockquote>
+
+<h2>Bootstrapping stow and cvs</h2>
+<p>
+The isilmar ports use stow(1) as packaging tool and the usual way to
+get a your ports tree is to do a checkout of a local copy of the
+ports cvs repository. So stow(1) and cvs(1) are needed; fortunately,
+they are both provided by the ports tree. However, that means that the
+first installation is slightly different, to avoid the chicken-egg
+problem.
+</p>
+<p><i>Note:</i>All files hosted on <tt>https://www.linta.de/ports</tt>
+are also hosted on <tt>http://www.linta.de/ports</tt>, and vice versa.
+</p>
+<p>
+Get your ports tree as shell archive.
+</p>
+<blockquote>
+<pre>
+$ mkdir -p $PORTSDIR
+$ cd $PORTSDIR
+$ wget https://www.linta.de/ports/ports.shar
+$ /bin/sh ports.shar
+$ rm ports.shar
+</pre>
+</blockquote>
+<p>
+Then install the port stow by hand.
+</p>
+<blockquote>
+<pre>
+$ cd $PORTSDIR/stow && make install clean
+$ cd $PREFIXBASE/stow
+$ ./stow-*/bin/stow stow-*/
+</pre>
+</blockquote>
+<p>
+Then the port cvs can be installed in the usual way.
+<blockquote>
+<pre>
+$ $PORTSDIR/bin/reinstallport cvs
+</pre>
+</blockquote>
+
+<h2>Obtaining the ports repository</h2>
+<p>
+Now it is time to replace the bootstrap ports tree by a proper cvs
+checkout. In that way, you have full history and can also choose to
+use older versions.
+</p>
+<p>First remove the bootstrap ports tree</p>
+<blockquote>
+<pre>
+$ rm -rf $PORTSDIR
+</pre>
+</blockquote>
+<p>
+Then download the cvs repository. In our example we place it in
+software/isilmar in your home directory; any other place works equally
+well, so adapt to your needs.
+</p> 
+<blockquote>
+<pre>
+$ mkdir -p $HOME/software/isilmar
+$ cd $HOME/software/isilmar
+$ wget https://www.linta.de/ports/ports.cvs.tar.gz
+$ tar xvfz ports.cvs.tar.gz 
+$ rm ports.cvs.tar.gz
+$ CVSROOT=`pwd`/ports.cvs
+$ cd $HOME/software # the parent of $PORTSDIR
+$ cvs -d $CVSROOT checkout ports
+</pre>
+</blockquote>
+<p>
+Now you can walk around in $PORTSDIR and use the usual cvs commands,
+like log or update to learn about the history of a port or get an
+older version.
+</p>
+
+<h2>Installing Software</h2>
+
+That's it! Now $PORTDIR/bin/reinstallport is the tool to install or
+upgrade a port. It takes precisely one argument, the name of the port.
+E.g., if you want to install units, simply type
+<blockquote>
+<pre>
+$PORTSDIR/bin/reinstallport units
+</pre>
+</blockquote>
+
+<h2>Feedback and further questions</h2>
+...can be directed to ports@linta.de
+
+</body>
+</html>

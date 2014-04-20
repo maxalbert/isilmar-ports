@@ -1,0 +1,10 @@
+
+
+NOTE:
+=====
+
+After updating dokuforge you have to restart the
+server. On a file with a system layout as isilmar
+do the following.
+
+/etc/init.d/dokuforge2 restart

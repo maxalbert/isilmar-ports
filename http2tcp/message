@@ -1,0 +1,10 @@
+
+NOTE:
+=====
+Afer updating http2tcp you have to restart the http2tcp-server,
+but beware of currently running ssh connections (just follow
+/var/log/apache2/acces.log for 10 seconds).
+
+To do so, you can use the following command on isilmar.
+
+/etc/init.d/http2tcp-server restart

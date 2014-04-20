@@ -1,0 +1,10 @@
+NOTE:
+====
+
+After reinstallung fcron, it needs to be restarted.
+On systems with the same hierarchy layout as isilmar,
+you can use the following command
+
+service fcron restart
+
+

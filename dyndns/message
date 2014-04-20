@@ -1,0 +1,7 @@
+If this is an initial installation, execute 'updatedata.py initialize' now
+
+Note, that after reinstalling the port, you have to restart the wsgi daemon.
+On isilmar.linta.de this can be done by typing
+
+/etc/init.d/dyndns-scgi-server restart
+

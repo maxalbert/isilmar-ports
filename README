@@ -1,0 +1,237 @@
+This is a slightly modified version of the portscollection for isilmar.linta.de.
+It is based on the shell archive at http://www.linta.de/ports/ports.shar
+
+
+Execute Summary:
+================
+
+1.) Installing stuff
+--------------------
+
+# cd /usr/local/ports && cvs update -d -P && ./bin/reinstallport <portname>
+
+If desired (e.g., to downgrade) set some sticky date or tag in the call to cvs.
+
+Afterwards run /root/bin/update-tripwire.bash (and have a cup of coffee).
+
+2.) Updating
+------------
+
+The following subsections describe how to get your changes into the
+ports tree; this should be done as normal user. Committing to the ports
+tree does not change the installation on the actual machine. So, once
+you've got your changes into the repository, update the installation as
+follows, working as root.
+
+# cd /usr/local/ports
+# cvs update -d -P
+# ./bin/reinstallport <portname>
+
+2.1) Updating a classical port to a new version
+------------------------------------------------
+
+This should be done as normal user, not as root. If you're not working on
+isilmar, in the second step use :ext:isilmar.linta.de:/var/isilmar-ports
+instead of /var/isilmar-ports
+
+$ cd /some/directory/where/you/can/play
+$ cvs -d /var/isilmar-ports checkout ports 
+$ cd ports/nameoftheportyouwishtoupdate
+$ $EDITOR Makefile
+
+  Change PORTVERSION to the new Version, remove PORTREVISION, if present.
+
+$ make makesum
+$ make extract
+
+  Go to ./work/<whateverthediriscalledtheupstreamtarballextractsto> and
+  carefully check, that it's not malware that you downloaded.
+
+  Alternatively compare the hash values in ./distinfo to some trusted good 
+  source.
+
+  Only afterwards make a testinstallation of the port as follows
+
+$ PREFIXBASE=/tmp/some/dir/you/like make install clean
+
+  Check if it works, then
+
+$ cvs ci
+
+2.2) Updating a port that refers to a local git repository
+----------------------------------------------------------
+
+$ cd /some/directory/where/you/can/play
+$ cvs -d /var/isilmar-ports checkout ports 
+$ cd ports/nameoftheportyouwishtoupdate
+$ $EDITOR Makefile
+
+  Change GITDATE and GITCOMMITTID
+
+$ cvs ci
+
+Note: if you're simply following a branch on the upstream
+repository and GIT_VERSION_BRANCH is set correctly in the
+port (or the default "master" is appropriate), instead of
+editing simply do a 
+
+$ make makegitcommitid
+
+
+Details:
+========
+
+What 'reinstallport ${portname}' does
+---------------------------------
+
+${PORTS}/bin/reinstallport first tries (and this is the hard part) to guess what the
+values of PORTS and PREFIXBASE should be, if they're not set already. On our current 
+installation on isilmar.linta.de the correct values are PORTS=/usr/local/ports
+and PREFIXBASE=/usr/local; fortunately, they're usually guessed correctly.
+
+Then the following commands are executed; if one fails, the rest is aborted.
+
+  cd ${PORTS}/${portname} && make build
+
+  cd ${PORTS}/${portname} && make test
+
+  Go to ${PREFIXBASE} and unstow the current installation, if present; then
+  rename the stow directory to a unique name starting with OLD-${date}
+
+  cd ${PORTS}/${portname} && make install
+
+  Go to ${PREFIXBASE} and stow the new directory
+
+
+
+What a port is
+--------------
+
+A port is a directory with a Makefile; typically, it would include some Makefile
+with the stuff that is common for all ports, in this case ports.mk. Only properties
+specific to this port are declared in the local Makefile. An isilmar port supports
+(at least) the following make targets (provided by ports.mk), where in the first block 
+target each implies the one before as dependency. So you can install a port with the 
+idiomatic 'make install clean'.
+
+fetch        Download the needed upstream files to $DISTDIR
+extract      Unpack the upstream sources into $WORKDIR
+patch        apply the port patches to the unpacked sources
+configure    run the configure script on the patched sources
+build        build everything in the port
+install      install the port
+
+
+clean        rm -rf $WORKDIR
+makesum      change the contents of ./distinfo to reflect the actual ones of the files in $DISTDIR
+
+
+The behavior of a port is influenced by  (at least) the following environment variables
+
+DISTDIR       The directory where distfiles are stored.
+              Defaults to: ../distfiles
+
+WORKDIR       The only directory where something is written (other then $DISTDIR in the fetch target, if
+              the files are not present and the place to install the port to for the install target).
+              Defaults to: $WRKDIRPREFIX/`pwd`/work
+
+PREFIXBASE    The place directory into which the directory stow is to be put. (Only used to influence
+              the default value of PREFIX, see below.)
+
+PREFIX        The installation prefix. All installation is done into the directory $PREFIX
+              Defaults to: $PREFIXBASE/stow/$PORTNAME-$PORTVERSION_$PORTREVISION  or
+                           $PREFIXBASE/stow/$PORTNAME-$PORTVERSION   (depending on whether $PORTREVISION is set) 
+
+
+Other use cases
+---------------
+
+* Git checkout at extract time, instead of classical fetching and extracting
+
+  Just set USEGIT=YES and set GITREPOSITORY, GITCOMMITID and GITDATE appropriately. 
+  GITDATE is a refernce date for the commit in the form YYYY.MM.DD and only used to determine
+  which changes are upgrade and which are downgrades (this is a bit hard, especially for a human,
+  to see this from the git commit id).
+
+  DISTFILES can be left unset. PORTVERSION, DO_EXTRACT and WRKSRC will be taken care of. The whole 
+  magic is in git.mk
+
+
+KNOBS
+-----
+
+
+The following are typically set in the local Makefile
+
+PORTVERSION             Upstream version
+PORTREVISION            isilmar revision number of this upstream version
+MASTER_SITE             Where the upstream sources are hosted
+MASTER_SITE_SUBDIR      The directory on the mastersite where the distfiles reside
+DISTFILES               The files to fetch from $MASTER_SITE/$MASTER_SITE_SUBDIR
+
+The following can be set (among others) in a local Makefile, if this software is build
+differently that the "standard way to install software". (Note: the default values where
+up to date at the time this README was written but may change in a conservative way
+in the future.)
+
+TAR_PARAMETER            additional flags to be given (besides xvf), if the upstream distfile is extracted with tar
+
+EXTRACT_CMD              the comand to unpack the upstream file
+                         defaults to: ${TAR} xvf${TAR_PARAMETER}
+
+PATCH_CMD                the command to patch the upstream sources
+                         defaults to: for patch in `ls ${PATCHDIR} | grep '^patch'`; \
+                                      do (cd ${WRKSRC} && ${PATCH} < ${PATCHDIR}/$$patch); done
+
+						 In other words, you normally would just put your patches into ${PATCHDIR} (defaulting
+						 to the standard portsdir) and name them patch-...
+
+CONFIGURE_OPTIONS        additional options (besides --prefix) to be given to the configure script, if that is used
+
+BUILDENV                 environmentvariable settings to prefix the call to ${GMAKE} for build and install
+                         defaults to: PREFIX=${PREFIX} \
+                                      PKG_CONFIG_PATH=${PREFIXBASE}/lib/pkgconfig:${PREFIXBASE}/lib64/pkgconfig:$$PKG_CONFIG_PATH \
+                                      CFLAGS=${CFLAGS}
+
+CONFIGURE_CMD            the command executed (in ${WRKSRC}) by the configure target
+                         defaults to: ${BUILDENV} /bin/sh ./configure --prefix=${PREFIX} ${CONFIGURE_OPTIONS}
+
+POST_CONFIGURE_CMD       Command to be exectued immediately after CONFIGURE_CMD
+
+GMAKE                    the name of the make utility to be used (see below)
+                         defaults to: make
+
+ALL_TARGET               the target for ${GMAKE} to build everything
+                         defaults to: all
+
+BUILD_CMD                the command to be executed by the build target
+                         defaults to: ${BUILDENV} ${GMAKE} ${ALL_TARGET}
+
+PRE_INSTALL_CMD          the comand to be executed before INSTALL_CMD
+                         defaults to: true
+
+INSTALL_CMD              the command to be executed by the install target
+                         defaults to: ${BUILDENV} ${GMAKE} install
+
+POSTINSTALL_CMD          the comand to be executed after INSTALL_CMD
+                         defaults to: true
+
+INSTALL_DEPENS           the command to install the depends file, if present (executed after POSTINSTALL_CMD)
+                         defaults to: if [ -f ${MASTERDIR}/depends ]; then mkdir -p ${PREFIX}/dependencies && \
+                                      install -m 644 ${MASTERDIR}/depends ${PREFIX}/dependencies/${PORTNAME}.depends; fi
+
+INSTALL_MESSAGE          the command to install the message file, if present (executed after INSTALL_DEPENDS)
+                         defaults to: if [ -f ${MASTERDIR}/message ]; then mkdir -p ${PREFIX}/dependencies && \
+                                      install -m 644 ${MASTERDIR}/message ${PREFIX}/dependencies/${PORTNAME}.message && \
+                                      echo "" && echo "" && cat ${MASTERDIR}/message && echo "" && echo ""; fi
+
+In these commands, the following directories (among others) may be used. See also WORKDIR, DISTDIR, and PREFIX above.
+
+MASTERDIR                the main port directory
+                         defaults to: `pwd`
+
+PATCHDIR                 where ${PATCH} finds its patches
+                         defaults to: ${MASTERDIR}
+
+WRKSRC                   where the extracted sources reside
+                         defaults to: ${WORKDIR}/${PORTNAME}-${PORTVERSION}

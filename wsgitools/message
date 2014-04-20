@@ -1,0 +1,12 @@
+Note:
+
+After reinstalling wsgitools you have to restart all
+applications using them. On current isilmar installation
+carrying out the following commands will do.
+
+sv force-reload df-alt-adapter
+/etc/init.d/http2tcp-server restart
+/etc/init.d/dyndns-scgi-server restart
+sv force-reload brodoaidpd
+/etc/init.d/nagiossubmit restart
+/etc/init.d/dokuforge2 restart
