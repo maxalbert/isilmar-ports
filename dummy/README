@@ -1,0 +1,9 @@
+This is a dummy (non-functional) port. Its only purpose is that it
+provides a minimal Makefile for easy copying & pasting to create a
+port for a software package that can be compiled with the standard
+
+   configure; make; make install
+
+incantation (although obviously the port name, download URL and version
+need to be adapted). It can also serve as a convenient starting point
+for packages which require more complicated installation procedures.
