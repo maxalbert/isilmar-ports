@@ -6,6 +6,4 @@ DISTFILES=${PORTNAME}-${PORTVERSION}.tar.gz
 TAR_PARAMETER=z
 FETCH_ARGS=
 
-#EXTRABUILDENV = LDFLAGS="-L/usr/lib64/"
-
 include ../ports.mk
