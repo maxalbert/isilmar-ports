@@ -1,6 +1,6 @@
 # $Id: Makefile,v 1.3 2011/05/10 18:16:49 aehlig Exp $
 
-PORTVERSION=1.3.3
+PORTVERSION=2.2.0
 PORTNAME=stow
 
 MASTER_SITE=ftp://ftp.cs.tu-berlin.de/pub/gnu/
